@@ -31,13 +31,7 @@
       "output": "static"
     },
     "scheme": "quicknotes",
-    "experiments": {
-      "typedRoutes": true
-    },
-    "plugins": [
-      "expo-router"
-    ],
-    "scheme": "quicknotes"
+    "plugins": []
   }
 }
 
