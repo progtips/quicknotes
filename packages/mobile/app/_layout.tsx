@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../src/utils/storage';
 import { useRouter, useSegments } from 'expo-router';
 
 const queryClient = new QueryClient({
@@ -22,7 +22,8 @@ function RootLayoutNav() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem('accessToken');
+        // Используем универсальное хранилище токенов
+        const token = await tokenStorage.getToken();
         const inAuthGroup = segments[0] === '(auth)';
 
         if (!token && !inAuthGroup) {

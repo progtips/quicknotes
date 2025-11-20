@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../utils/storage';
 
 interface User {
   id: string;
@@ -14,9 +14,9 @@ export const useAuth = () => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userStr = await AsyncStorage.getItem('user');
-        if (userStr) {
-          setUser(JSON.parse(userStr));
+        const userData = await tokenStorage.getUser();
+        if (userData) {
+          setUser(userData as User);
         }
       } catch (error) {
         console.error('Ошибка загрузки пользователя:', error);

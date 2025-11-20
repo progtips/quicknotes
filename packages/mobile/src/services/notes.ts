@@ -1,5 +1,8 @@
-import { api } from './api';
+import { api, ApiResponse } from './api';
 
+/**
+ * Типы для заметок
+ */
 export interface Note {
   id: string;
   userId: string;
@@ -19,33 +22,64 @@ export interface NoteResponse {
   note: Note;
 }
 
-export const getNotes = async (includeArchived = false) => {
-  const response = await api.get<{ data: NotesResponse }>(
+/**
+ * Получить список заметок
+ * @param includeArchived - включать ли архивные заметки (по умолчанию false)
+ * @returns Список заметок
+ */
+export const getNotes = async (
+  includeArchived = false
+): Promise<ApiResponse<NotesResponse>> => {
+  const response = await api.get<ApiResponse<NotesResponse>>(
     `/notes?includeArchived=${includeArchived}`
   );
   return response.data;
 };
 
-export const getNoteById = async (id: string) => {
-  const response = await api.get<{ data: NoteResponse }>(`/notes/${id}`);
+/**
+ * Получить заметку по ID
+ * @param id - ID заметки
+ * @returns Данные заметки
+ */
+export const getNote = async (id: string): Promise<ApiResponse<NoteResponse>> => {
+  const response = await api.get<ApiResponse<NoteResponse>>(`/notes/${id}`);
   return response.data;
 };
 
-export const createNote = async (data: { title: string; content: string }) => {
-  const response = await api.post<{ data: NoteResponse }>('/notes', data);
+/**
+ * Создать новую заметку
+ * @param data - title и content заметки
+ * @returns Созданная заметка
+ */
+export const createNote = async (
+  data: { title: string; content: string }
+): Promise<ApiResponse<NoteResponse>> => {
+  const response = await api.post<ApiResponse<NoteResponse>>('/notes', data);
   return response.data;
 };
 
+/**
+ * Обновить заметку
+ * @param id - ID заметки
+ * @param data - Данные для обновления (title, content, isArchived)
+ * @returns Обновленная заметка
+ */
 export const updateNote = async (
   id: string,
   data: { title?: string; content?: string; isArchived?: boolean }
-) => {
-  const response = await api.put<{ data: NoteResponse }>(`/notes/${id}`, data);
+): Promise<ApiResponse<NoteResponse>> => {
+  const response = await api.put<ApiResponse<NoteResponse>>(`/notes/${id}`, data);
   return response.data;
 };
 
-export const deleteNote = async (id: string) => {
-  const response = await api.delete<{ data: NoteResponse }>(`/notes/${id}`);
+/**
+ * Удалить заметку (мягкое удаление)
+ * @param id - ID заметки
+ * @returns Удаленная заметка
+ */
+export const deleteNote = async (
+  id: string
+): Promise<ApiResponse<NoteResponse>> => {
+  const response = await api.delete<ApiResponse<NoteResponse>>(`/notes/${id}`);
   return response.data;
 };
-

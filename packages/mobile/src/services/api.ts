@@ -1,39 +1,74 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { tokenStorage } from '../utils/storage';
+import { Platform } from 'react-native';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api';
+// Базовый URL API (пока захардкожен, потом вынесем в .env)
+const API_URL = 'http://localhost:4000/api';
 
+/**
+ * Создание экземпляра axios с базовой конфигурацией
+ */
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 секунд таймаут
 });
 
-// Interceptor для добавления токена
+/**
+ * Interceptor для автоматической подстановки JWT токена в заголовки
+ */
 api.interceptors.request.use(
-  async (config) => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config: InternalAxiosRequestConfig) => {
+    try {
+      const token = await tokenStorage.getToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Ошибка получения токена:', error);
     }
     return config;
   },
-  (error) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
 
-// Interceptor для обработки ошибок
+/**
+ * Interceptor для обработки ответов и ошибок
+ */
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response) => {
+    // Успешный ответ - просто возвращаем
+    return response;
+  },
+  async (error: AxiosError) => {
+    // Обработка ошибок
     if (error.response?.status === 401) {
-      // Токен истек или недействителен
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('user');
+      // Токен истек или недействителен - очищаем хранилище
+      await tokenStorage.clear();
+      
+      // На web платформе можно перенаправить на страницу входа
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
+
+    // Пробрасываем ошибку дальше
     return Promise.reject(error);
   }
 );
 
+/**
+ * Типы для API ответов
+ */
+export interface ApiResponse<T> {
+  data: T;
+}
+
+export interface ApiError {
+  error: string;
+  details?: unknown;
+}

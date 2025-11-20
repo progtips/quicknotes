@@ -1,5 +1,9 @@
-import { api } from './api';
+import { api, ApiResponse } from './api';
+import { tokenStorage } from '../utils/storage';
 
+/**
+ * Типы для запросов аутентификации
+ */
 export interface LoginRequest {
   email: string;
   password: string;
@@ -10,27 +14,70 @@ export interface RegisterRequest {
   password: string;
 }
 
+/**
+ * Типы для ответов аутентификации
+ */
+export interface User {
+  id: string;
+  email: string;
+  createdAt: string;
+}
+
 export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    createdAt: string;
-  };
+  user: User;
   accessToken: string;
 }
 
-export const login = async (data: LoginRequest) => {
-  const response = await api.post<{ data: AuthResponse }>('/auth/login', data);
+/**
+ * Регистрация нового пользователя
+ * @param data - email и password
+ * @returns Данные пользователя и accessToken
+ */
+export const register = async (
+  data: RegisterRequest
+): Promise<ApiResponse<AuthResponse>> => {
+  const response = await api.post<ApiResponse<AuthResponse>>('/auth/register', data);
+  
+  // Сохраняем токен и пользователя после успешной регистрации
+  if (response.data.data.accessToken) {
+    await tokenStorage.setToken(response.data.data.accessToken);
+    await tokenStorage.setUser(response.data.data.user);
+  }
+  
   return response.data;
 };
 
-export const register = async (data: RegisterRequest) => {
-  const response = await api.post<{ data: AuthResponse }>('/auth/register', data);
+/**
+ * Вход в систему
+ * @param data - email и password
+ * @returns Данные пользователя и accessToken
+ */
+export const login = async (
+  data: LoginRequest
+): Promise<ApiResponse<AuthResponse>> => {
+  const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
+  
+  // Сохраняем токен и пользователя после успешного входа
+  if (response.data.data.accessToken) {
+    await tokenStorage.setToken(response.data.data.accessToken);
+    await tokenStorage.setUser(response.data.data.user);
+  }
+  
   return response.data;
 };
 
-export const getMe = async () => {
-  const response = await api.get<{ data: { user: AuthResponse['user'] } }>('/auth/me');
+/**
+ * Получить информацию о текущем пользователе
+ * @returns Данные текущего пользователя
+ */
+export const getMe = async (): Promise<ApiResponse<{ user: User }>> => {
+  const response = await api.get<ApiResponse<{ user: User }>>('/auth/me');
   return response.data;
 };
 
+/**
+ * Выход из системы (очистка токена)
+ */
+export const logout = async (): Promise<void> => {
+  await tokenStorage.clear();
+};

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getNoteById, updateNote, createNote } from '../../../src/services/notes';
+import { getNote, updateNote, createNote } from '../../../src/services/notes';
 
 export default function NoteEditScreen() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function NoteEditScreen() {
 
   const { data: noteData, isLoading } = useQuery({
     queryKey: ['note', id],
-    queryFn: () => getNoteById(id!),
+    queryFn: () => getNote(id!),
     enabled: !isNew,
   });
 

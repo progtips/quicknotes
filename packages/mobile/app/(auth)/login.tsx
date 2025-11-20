@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { login, register } from '../../src/services/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AxiosError } from 'axios';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -19,26 +19,25 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Использование API клиента с автоматическим сохранением токена
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: async (data) => {
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
+    onSuccess: () => {
+      // Токен автоматически сохранен в register/login функциях
       router.replace('/(tabs)/notes');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error: string }>) => {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось войти');
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: register,
-    onSuccess: async (data) => {
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
+    onSuccess: () => {
+      // Токен автоматически сохранен в register/login функциях
       router.replace('/(tabs)/notes');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error: string }>) => {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось зарегистрироваться');
     },
   });

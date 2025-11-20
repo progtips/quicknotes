@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../src/utils/storage';
 
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
@@ -9,7 +9,8 @@ export default function Index() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem('accessToken');
+        // Используем универсальное хранилище токенов
+        const token = await tokenStorage.getToken();
         setHasToken(!!token);
       } catch (error) {
         console.error('Ошибка проверки авторизации:', error);

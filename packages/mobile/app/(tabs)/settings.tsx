@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logout } from '../../src/services/auth';
 import { useAuth } from '../../src/hooks/useAuth';
 
 export default function SettingsScreen() {
@@ -14,8 +14,8 @@ export default function SettingsScreen() {
         text: 'Выйти',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('accessToken');
-          await AsyncStorage.removeItem('user');
+          // Используем функцию logout из API клиента
+          await logout();
           router.replace('/(auth)/login');
         },
       },
