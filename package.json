@@ -1,0 +1,36 @@
+{
+  "name": "quicknotes-monorepo",
+  "version": "1.0.0",
+  "description": "Монорепозиторий для QuickNotes - кроссплатформенного сервиса заметок",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:backend && npm run install:mobile",
+    "install:backend": "cd packages/backend && npm install",
+    "install:mobile": "cd packages/mobile && npm install",
+    "dev:backend": "cd packages/backend && npm run dev",
+    "dev:mobile": "cd packages/mobile && npm start",
+    "build:backend": "cd packages/backend && npm run build",
+    "build:mobile": "cd packages/mobile && npm run build",
+    "test:backend": "cd packages/backend && npm test",
+    "test:mobile": "cd packages/mobile && npm test"
+  },
+  "keywords": [
+    "notes",
+    "react-native",
+    "expo",
+    "nodejs",
+    "typescript",
+    "postgresql",
+    "prisma"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
+
