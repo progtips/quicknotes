@@ -1,5 +1,5 @@
 import { api, ApiResponse } from './api';
-import { tokenStorage } from '../utils/storage';
+import { authStorage } from '../storage/authStorage';
 
 /**
  * Типы для запросов аутентификации
@@ -40,8 +40,8 @@ export const register = async (
   
   // Сохраняем токен и пользователя после успешной регистрации
   if (response.data.data.accessToken) {
-    await tokenStorage.setToken(response.data.data.accessToken);
-    await tokenStorage.setUser(response.data.data.user);
+    await authStorage.setToken(response.data.data.accessToken);
+    await authStorage.setUser(response.data.data.user);
   }
   
   return response.data;
@@ -59,8 +59,8 @@ export const login = async (
   
   // Сохраняем токен и пользователя после успешного входа
   if (response.data.data.accessToken) {
-    await tokenStorage.setToken(response.data.data.accessToken);
-    await tokenStorage.setUser(response.data.data.user);
+    await authStorage.setToken(response.data.data.accessToken);
+    await authStorage.setUser(response.data.data.user);
   }
   
   return response.data;
@@ -79,5 +79,5 @@ export const getMe = async (): Promise<ApiResponse<{ user: User }>> => {
  * Выход из системы (очистка токена)
  */
 export const logout = async (): Promise<void> => {
-  await tokenStorage.clear();
+  await authStorage.clear();
 };

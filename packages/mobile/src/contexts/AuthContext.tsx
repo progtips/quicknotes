@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { tokenStorage } from '../utils/storage';
+import { authStorage } from '../storage/authStorage';
 import { login as loginApi, register as registerApi, logout as logoutApi, User } from '../services/auth';
 
 interface AuthContextType {
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userData = await tokenStorage.getUser();
+        const userData = await authStorage.getUser();
         if (userData) {
           setUser(userData as User);
         }
