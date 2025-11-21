@@ -24,9 +24,10 @@ const RegisterScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    console.log('handleRegister вызван', { isLoading, email: email ? 'заполнен' : 'пусто' });
+    console.log('Регистрация: отправляем запрос', { email, passwordLength: password?.length, confirmPasswordLength: confirmPassword?.length });
     
     // Предотвращаем множественные клики
     if (isLoading) {
@@ -34,41 +35,100 @@ const RegisterScreen = () => {
       return;
     }
 
-    if (!email || !password || !confirmPassword) {
-      console.log('Не все поля заполнены');
-      Alert.alert('Ошибка', 'Заполните все поля');
+    // Очищаем предыдущие ошибки
+    setErrorMessage(null);
+
+    // Валидация: проверяем, что email не пустой
+    console.log('Регистрация: проверка email', { email, trimmed: email?.trim() });
+    if (!email || !email.trim()) {
+      console.log('Регистрация: email пустой');
+      const error = 'Введите email';
+      setErrorMessage(error);
+      Alert.alert('Ошибка', error);
       return;
     }
 
+    // Валидация: проверяем, что пароли заполнены
+    console.log('Регистрация: проверка паролей', { hasPassword: !!password, hasConfirmPassword: !!confirmPassword });
+    if (!password || !confirmPassword) {
+      console.log('Регистрация: пароли не заполнены');
+      const error = 'Заполните все поля';
+      setErrorMessage(error);
+      Alert.alert('Ошибка', error);
+      return;
+    }
+
+    // Валидация: проверяем, что пароли совпадают
+    console.log('Регистрация: проверка совпадения паролей', { passwordsMatch: password === confirmPassword });
     if (password !== confirmPassword) {
-      console.log('Пароли не совпадают');
-      Alert.alert('Ошибка', 'Пароли не совпадают');
+      console.log('Регистрация: пароли не совпадают');
+      const error = 'Пароли не совпадают';
+      setErrorMessage(error);
+      Alert.alert('Ошибка', error);
       return;
     }
 
+    // Валидация: проверяем минимальную длину пароля
+    console.log('Регистрация: проверка длины пароля', { passwordLength: password.length });
     if (password.length < 6) {
-      console.log('Пароль слишком короткий');
-      Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
+      console.log('Регистрация: пароль слишком короткий');
+      const error = 'Пароль должен содержать минимум 6 символов';
+      setErrorMessage(error);
+      Alert.alert('Ошибка', error);
       return;
     }
 
-    console.log('Начинаем регистрацию...', { email, passwordLength: password.length });
+    console.log('Регистрация: все проверки пройдены, начинаем регистрацию');
     setIsLoading(true);
     
     try {
-      console.log('Вызываем register из AuthContext...');
+      console.log('Регистрация: вызываем register из AuthContext', { email, registerFunction: typeof register });
+      if (!register || typeof register !== 'function') {
+        throw new Error('Функция register не доступна из AuthContext');
+      }
       await register(email, password);
-      console.log('Регистрация успешна, пользователь должен быть перенаправлен');
-      // Навигация произойдет автоматически через RootNavigator
+      console.log('Регистрация: успешно завершена');
+      // Навигация произойдет автоматически через RootNavigator при изменении user в AuthContext
     } catch (error) {
-      console.error('Ошибка регистрации:', error);
-      const axiosError = error as AxiosError<{ error: string }>;
-      const errorMessage = 
-        axiosError.response?.data?.error || 
-        axiosError.message || 
-        'Не удалось зарегистрироваться';
-      console.error('Показываем ошибку пользователю:', errorMessage);
-      Alert.alert('Ошибка', errorMessage);
+      console.error('Регистрация: ошибка', error);
+      
+      // Обработка ошибок с сервера
+      const axiosError = error as AxiosError<{ error?: string; message?: string }>;
+      
+      let errorMessage = 'Не удалось зарегистрироваться';
+      
+      if (axiosError.response) {
+        // Ошибка от сервера
+        const serverError = axiosError.response.data;
+        const status = axiosError.response.status;
+        
+        // Специальная обработка для 409 Conflict (пользователь уже существует)
+        if (status === 409) {
+          errorMessage = serverError?.error || serverError?.message || 'Пользователь с таким email уже зарегистрирован';
+        } else {
+          // Для других ошибок показываем общее сообщение + детали с сервера
+          const serverMessage = serverError?.error || serverError?.message;
+          errorMessage = serverMessage 
+            ? `Ошибка регистрации: ${serverMessage}` 
+            : `Ошибка регистрации (код ${status})`;
+        }
+        
+        console.error('Регистрация: ошибка сервера', {
+          status,
+          data: serverError,
+        });
+      } else if (axiosError.request) {
+        // Запрос отправлен, но ответа нет
+        errorMessage = 'Не удалось подключиться к серверу. Проверьте подключение к интернету.';
+        console.error('Регистрация: нет ответа от сервера', axiosError.request);
+      } else {
+        // Ошибка при настройке запроса
+        errorMessage = axiosError.message || error?.toString() || 'Произошла ошибка при регистрации';
+        console.error('Регистрация: ошибка запроса', axiosError.message || error);
+      }
+      
+      setErrorMessage(errorMessage);
+      Alert.alert('Ошибка регистрации', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +141,12 @@ const RegisterScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Регистрация</Text>
+
+      {errorMessage && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      )}
 
       <TextInput
         style={styles.input}
@@ -115,7 +181,10 @@ const RegisterScreen = () => {
 
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleRegister}
+        onPress={() => {
+          console.log('Кнопка "Зарегистрироваться" нажата');
+          handleRegister();
+        }}
         disabled={isLoading}
         activeOpacity={0.7}
       >
@@ -180,6 +249,19 @@ const styles = StyleSheet.create({
   switchText: {
     color: '#007AFF',
     fontSize: 14,
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#F44336',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#C62828',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

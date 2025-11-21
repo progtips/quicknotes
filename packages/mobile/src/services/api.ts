@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { authStorage } from '../storage/authStorage';
+import { tokenStorage } from '../storage/tokenStorage';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../config';
 
@@ -20,7 +20,7 @@ export const api = axios.create({
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const token = await authStorage.getToken();
+      const token = await tokenStorage.getToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -45,8 +45,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     // Обработка ошибок
     if (error.response?.status === 401) {
-      // Токен истек или недействителен - очищаем хранилище
-      await authStorage.clear();
+      // Токен истек или недействителен - очищаем токен
+      try {
+        await tokenStorage.clearToken();
+      } catch (clearError) {
+        console.error('Ошибка очистки токена:', clearError);
+      }
       
       // На web платформе можно перенаправить на страницу входа
       if (Platform.OS === 'web' && typeof window !== 'undefined') {

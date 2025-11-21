@@ -47,18 +47,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (email: string, password: string): Promise<void> => {
+    console.log('AuthContext.register: начало', { email });
     try {
+      console.log('AuthContext.register: вызываем registerApi');
       const response = await registerApi({ email, password });
+      console.log('AuthContext.register: получен ответ', { hasUser: !!response.data.user });
       // Токен уже сохранен в registerApi функции
       setUser(response.data.user);
+      console.log('AuthContext.register: пользователь установлен в state');
     } catch (error) {
+      console.error('AuthContext.register: ошибка', error);
       throw error;
     }
   };
 
   const logout = async (): Promise<void> => {
-    await logoutApi();
-    setUser(null);
+    try {
+      console.log('AuthContext.logout: начало выхода');
+      await logoutApi();
+      console.log('AuthContext.logout: logoutApi завершен');
+      setUser(null);
+      console.log('AuthContext.logout: пользователь удален из state');
+    } catch (error) {
+      console.error('AuthContext.logout: ошибка при выходе', error);
+      // Даже если произошла ошибка, очищаем пользователя из state
+      setUser(null);
+      // Также пытаемся очистить хранилище напрямую
+      try {
+        if (authStorage && typeof authStorage.clear === 'function') {
+          await authStorage.clear();
+        }
+      } catch (clearError) {
+        console.error('AuthContext.logout: ошибка очистки хранилища', clearError);
+      }
+    }
   };
 
   const value: AuthContextType = {

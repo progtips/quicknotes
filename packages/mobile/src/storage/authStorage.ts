@@ -119,5 +119,36 @@ const nativeStorage: AuthStorage = {
   },
 };
 
+// Функция для безопасного получения authStorage
+const getAuthStorage = (): AuthStorage => {
+  // Сначала проверяем наличие window (web платформа)
+  if (typeof window !== 'undefined') {
+    return webStorage;
+  }
+  
+  // Затем проверяем Platform (native платформы)
+  try {
+    if (Platform && Platform.OS) {
+      return Platform.OS === 'web' ? webStorage : nativeStorage;
+    }
+  } catch (error) {
+    console.warn('Ошибка определения платформы через Platform, используем fallback');
+  }
+  
+  // Fallback: по умолчанию используем nativeStorage
+  // Но если мы дошли сюда, скорее всего это web, поэтому используем webStorage
+  return webStorage;
+};
+
 // Экспортируем правильную реализацию в зависимости от платформы
-export const authStorage: AuthStorage = Platform.OS === 'web' ? webStorage : nativeStorage;
+// Используем ленивую инициализацию для гарантии правильной работы
+let _authStorageInstance: AuthStorage | null = null;
+
+const getAuthStorageInstance = (): AuthStorage => {
+  if (!_authStorageInstance) {
+    _authStorageInstance = getAuthStorage();
+  }
+  return _authStorageInstance;
+};
+
+export const authStorage: AuthStorage = getAuthStorageInstance();

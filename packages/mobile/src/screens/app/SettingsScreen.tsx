@@ -5,15 +5,22 @@ import { useAuth } from '../../contexts/AuthContext';
 const SettingsScreen = () => {
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
       { text: 'Отмена', style: 'cancel' },
       {
         text: 'Выйти',
         style: 'destructive',
         onPress: async () => {
-          await logout();
-          // Навигация произойдет автоматически через RootNavigator
+          try {
+            console.log('SettingsScreen: начало выхода');
+            await logout();
+            console.log('SettingsScreen: выход завершен');
+            // Навигация произойдет автоматически через RootNavigator при изменении user в AuthContext
+          } catch (error) {
+            console.error('SettingsScreen: ошибка при выходе', error);
+            Alert.alert('Ошибка', 'Не удалось выйти из аккаунта. Попробуйте еще раз.');
+          }
         },
       },
     ]);
