@@ -1,15 +1,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { authStorage } from '../storage/authStorage';
 import { Platform } from 'react-native';
-
-// Базовый URL API (пока захардкожен, потом вынесем в .env)
-const API_URL = 'http://localhost:4000/api';
+import { API_BASE_URL } from '../config';
 
 /**
  * Создание экземпляра axios с базовой конфигурацией
  */
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

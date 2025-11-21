@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import NotesListScreen from '../screens/app/NotesListScreen';
@@ -25,6 +26,15 @@ const MainTabs = () => {
         headerShown: true,
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#999',
+        // Улучшенная поддержка web для BottomTabNavigator
+        tabBarStyle: Platform.select({
+          web: {
+            position: 'relative' as const,
+            borderTopWidth: 1,
+            borderTopColor: '#ddd',
+          },
+          default: {},
+        }),
       }}
     >
       <Tab.Screen

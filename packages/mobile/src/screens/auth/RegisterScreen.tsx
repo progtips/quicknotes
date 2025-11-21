@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,6 +26,11 @@ const RegisterScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
+    // Предотвращаем множественные клики
+    if (isLoading) {
+      return;
+    }
+
     if (!email || !password || !confirmPassword) {
       Alert.alert('Ошибка', 'Заполните все поля');
       return;
@@ -42,11 +48,18 @@ const RegisterScreen = () => {
 
     setIsLoading(true);
     try {
+      console.log('Начало регистрации...', { email });
       await register(email, password);
+      console.log('Регистрация успешна');
       // Навигация произойдет автоматически через RootNavigator
     } catch (error) {
+      console.error('Ошибка регистрации:', error);
       const axiosError = error as AxiosError<{ error: string }>;
-      Alert.alert('Ошибка', axiosError.response?.data?.error || 'Не удалось зарегистрироваться');
+      const errorMessage = 
+        axiosError.response?.data?.error || 
+        axiosError.message || 
+        'Не удалось зарегистрироваться';
+      Alert.alert('Ошибка', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -93,8 +106,15 @@ const RegisterScreen = () => {
 
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleRegister}
+        onPress={(e) => {
+          // Предотвращаем стандартное поведение для web
+          if (Platform.OS === 'web' && e) {
+            (e as any).preventDefault?.();
+          }
+          handleRegister();
+        }}
         disabled={isLoading}
+        activeOpacity={0.7}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />
