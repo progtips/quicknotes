@@ -159,10 +159,11 @@ export const logout = async (): Promise<void> => {
       if (typeof window !== 'undefined' && window.localStorage) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
-        console.log('API logout: очистка через localStorage fallback');
+        console.log('API logout: очистка через localStorage fallback выполнена');
       }
     } catch (fallbackError) {
       console.error('API logout: ошибка fallback очистки', fallbackError);
     }
+    // Не пробрасываем ошибку дальше - выход должен работать даже при ошибках
   }
 };

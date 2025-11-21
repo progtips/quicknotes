@@ -123,32 +123,57 @@ const nativeStorage: AuthStorage = {
 const getAuthStorage = (): AuthStorage => {
   // Сначала проверяем наличие window (web платформа)
   if (typeof window !== 'undefined') {
+    console.log('authStorage: определяем платформу как web через window');
     return webStorage;
   }
   
   // Затем проверяем Platform (native платформы)
   try {
     if (Platform && Platform.OS) {
-      return Platform.OS === 'web' ? webStorage : nativeStorage;
+      const storage = Platform.OS === 'web' ? webStorage : nativeStorage;
+      console.log('authStorage: определяем платформу через Platform.OS:', Platform.OS);
+      return storage;
     }
   } catch (error) {
-    console.warn('Ошибка определения платформы через Platform, используем fallback');
+    console.warn('authStorage: ошибка определения платформы через Platform', error);
   }
   
-  // Fallback: по умолчанию используем nativeStorage
-  // Но если мы дошли сюда, скорее всего это web, поэтому используем webStorage
+  // Fallback: по умолчанию используем webStorage
+  console.warn('authStorage: используем fallback - webStorage');
   return webStorage;
 };
 
 // Экспортируем правильную реализацию в зависимости от платформы
-// Используем ленивую инициализацию для гарантии правильной работы
-let _authStorageInstance: AuthStorage | null = null;
+// Используем прямую инициализацию для гарантии правильной работы
+// Ленивая инициализация может вызывать проблемы с порядком загрузки модулей
 
-const getAuthStorageInstance = (): AuthStorage => {
-  if (!_authStorageInstance) {
-    _authStorageInstance = getAuthStorage();
+const initializeAuthStorage = (): AuthStorage => {
+  const storage = getAuthStorage();
+  
+  // Проверяем, что экземпляр валиден
+  if (!storage || typeof storage.getToken !== 'function') {
+    console.error('authStorage: созданный экземпляр не валиден!', {
+      instance: storage,
+      type: typeof storage,
+      keys: storage ? Object.keys(storage) : [],
+      hasGetToken: storage && typeof storage.getToken,
+      hasSetToken: storage && typeof storage.setToken,
+      hasRemoveToken: storage && typeof storage.removeToken,
+    });
+    // Принудительно используем webStorage как fallback
+    console.warn('authStorage: используем webStorage как fallback');
+    return webStorage;
   }
-  return _authStorageInstance;
+  
+  console.log('authStorage: экземпляр успешно создан и валиден', {
+    hasGetToken: typeof storage.getToken === 'function',
+    hasSetToken: typeof storage.setToken === 'function',
+    hasRemoveToken: typeof storage.removeToken === 'function',
+    keys: Object.keys(storage),
+  });
+  
+  return storage;
 };
 
-export const authStorage: AuthStorage = getAuthStorageInstance();
+// Инициализируем сразу при загрузке модуля
+export const authStorage: AuthStorage = initializeAuthStorage();

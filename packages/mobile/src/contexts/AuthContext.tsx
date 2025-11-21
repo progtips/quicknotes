@@ -66,21 +66,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('AuthContext.logout: начало выхода');
       await logoutApi();
       console.log('AuthContext.logout: logoutApi завершен');
-      setUser(null);
-      console.log('AuthContext.logout: пользователь удален из state');
     } catch (error) {
-      console.error('AuthContext.logout: ошибка при выходе', error);
-      // Даже если произошла ошибка, очищаем пользователя из state
-      setUser(null);
-      // Также пытаемся очистить хранилище напрямую
-      try {
-        if (authStorage && typeof authStorage.clear === 'function') {
-          await authStorage.clear();
-        }
-      } catch (clearError) {
-        console.error('AuthContext.logout: ошибка очистки хранилища', clearError);
-      }
+      console.error('AuthContext.logout: ошибка при вызове logoutApi', error);
+      // Продолжаем выполнение даже при ошибке
     }
+    
+    // Всегда очищаем пользователя из state, даже если logoutApi упал
+    console.log('AuthContext.logout: очищаем пользователя из state');
+    setUser(null);
+    
+    // Также пытаемся очистить хранилище напрямую для надежности
+    try {
+      if (authStorage && typeof authStorage.removeUser === 'function') {
+        await authStorage.removeUser();
+        console.log('AuthContext.logout: пользователь удален из authStorage');
+      } else if (authStorage && typeof authStorage.clear === 'function') {
+        await authStorage.clear();
+        console.log('AuthContext.logout: хранилище очищено через clear()');
+      }
+    } catch (clearError) {
+      console.error('AuthContext.logout: ошибка очистки хранилища', clearError);
+      // Игнорируем ошибку - главное, что пользователь удален из state
+    }
+    
+    console.log('AuthContext.logout: выход завершен');
   };
 
   const value: AuthContextType = {

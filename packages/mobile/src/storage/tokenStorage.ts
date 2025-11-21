@@ -1,39 +1,29 @@
-import { authStorage } from './authStorage';
-
 const TOKEN_KEY = 'accessToken';
 
 /**
- * Получить валидный экземпляр authStorage
- * Гарантирует, что всегда возвращается валидный объект
+ * Создать реализацию хранилища токенов для текущей платформы
+ * На web использует localStorage напрямую, на native - пытается использовать authStorage
  */
-const getValidAuthStorage = () => {
-  // Проверяем, что authStorage существует и имеет нужные методы
-  if (authStorage && typeof authStorage.getToken === 'function' && typeof authStorage.setToken === 'function') {
-    return authStorage;
-  }
-  
-  // Если authStorage не валиден, создаем fallback реализацию
-  console.warn('tokenStorage: authStorage не валиден, используем fallback');
-  
-  // Fallback для web платформы
+const createTokenStorageImpl = () => {
+  // Для web платформы используем localStorage напрямую
   if (typeof window !== 'undefined' && window.localStorage) {
     return {
-      getToken: async () => {
+      getToken: async (): Promise<string | null> => {
         try {
           return localStorage.getItem(TOKEN_KEY);
         } catch {
           return null;
         }
       },
-      setToken: async (token: string) => {
+      setToken: async (token: string): Promise<void> => {
         try {
           localStorage.setItem(TOKEN_KEY, token);
         } catch (error) {
-          console.error('tokenStorage fallback: ошибка сохранения токена', error);
+          console.error('tokenStorage: ошибка сохранения токена', error);
           throw error;
         }
       },
-      removeToken: async () => {
+      removeToken: async (): Promise<void> => {
         try {
           localStorage.removeItem(TOKEN_KEY);
         } catch {
@@ -41,6 +31,22 @@ const getValidAuthStorage = () => {
         }
       },
     };
+  }
+  
+  // Для native платформ пытаемся использовать authStorage
+  try {
+    const authStorageModule = require('./authStorage');
+    const authStorage = authStorageModule.authStorage;
+    
+    if (authStorage && typeof authStorage.getToken === 'function') {
+      return {
+        getToken: authStorage.getToken.bind(authStorage),
+        setToken: authStorage.setToken.bind(authStorage),
+        removeToken: authStorage.removeToken.bind(authStorage),
+      };
+    }
+  } catch (error) {
+    // Игнорируем ошибки импорта
   }
   
   // Fallback для native (пустая реализация)
@@ -53,9 +59,12 @@ const getValidAuthStorage = () => {
   };
 };
 
+// Создаем реализацию один раз при загрузке модуля
+const storageImpl = createTokenStorageImpl();
+
 /**
  * Единый адаптер для работы с токеном
- * Обеспечивает безопасный доступ к authStorage и предотвращает ошибки undefined
+ * Обеспечивает безопасный доступ к хранилищу токенов для всех платформ
  */
 export const tokenStorage = {
   /**
@@ -63,8 +72,7 @@ export const tokenStorage = {
    */
   async getToken(): Promise<string | null> {
     try {
-      const storage = getValidAuthStorage();
-      return await storage.getToken();
+      return await storageImpl.getToken();
     } catch (error) {
       console.error('tokenStorage: ошибка получения токена', error);
       return null;
@@ -76,8 +84,7 @@ export const tokenStorage = {
    */
   async setToken(token: string): Promise<void> {
     try {
-      const storage = getValidAuthStorage();
-      await storage.setToken(token);
+      await storageImpl.setToken(token);
     } catch (error) {
       console.error('tokenStorage: ошибка сохранения токена', error);
       throw error;
@@ -89,10 +96,7 @@ export const tokenStorage = {
    */
   async clearToken(): Promise<void> {
     try {
-      const storage = getValidAuthStorage();
-      if (typeof storage.removeToken === 'function') {
-        await storage.removeToken();
-      }
+      await storageImpl.removeToken();
     } catch (error) {
       console.error('tokenStorage: ошибка удаления токена', error);
       // Не пробрасываем ошибку, так как очистка должна работать в любом случае

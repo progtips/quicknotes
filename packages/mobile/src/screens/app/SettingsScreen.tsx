@@ -1,29 +1,71 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 const SettingsScreen = () => {
   const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Выйти',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            console.log('SettingsScreen: начало выхода');
-            await logout();
-            console.log('SettingsScreen: выход завершен');
-            // Навигация произойдет автоматически через RootNavigator при изменении user в AuthContext
-          } catch (error) {
-            console.error('SettingsScreen: ошибка при выходе', error);
-            Alert.alert('Ошибка', 'Не удалось выйти из аккаунта. Попробуйте еще раз.');
-          }
+  const handleLogout = () => {
+    console.log('SettingsScreen: handleLogout вызван');
+    
+    // Предотвращаем множественные вызовы
+    if (isLoggingOut) {
+      console.log('SettingsScreen: выход уже выполняется, пропускаем');
+      return;
+    }
+    
+    // На web используем window.confirm, на native - Alert.alert
+    if (Platform.OS === 'web') {
+      // Используем setTimeout для неблокирующего выполнения
+      setTimeout(() => {
+        const confirmed = window.confirm('Вы уверены, что хотите выйти?');
+        if (confirmed) {
+          performLogout();
+        } else {
+          console.log('SettingsScreen: выход отменен');
+        }
+      }, 0);
+    } else {
+      Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
+        { 
+          text: 'Отмена', 
+          style: 'cancel',
+          onPress: () => {
+            console.log('SettingsScreen: выход отменен');
+          },
         },
-      },
-    ]);
+        {
+          text: 'Выйти',
+          style: 'destructive',
+          onPress: performLogout,
+        },
+      ]);
+    }
+  };
+
+  const performLogout = async () => {
+    if (isLoggingOut) {
+      console.log('SettingsScreen: выход уже выполняется, пропускаем');
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+      console.log('SettingsScreen: начало выхода, вызываем logout');
+      await logout();
+      console.log('SettingsScreen: logout завершен успешно');
+      // Навигация произойдет автоматически через RootNavigator при изменении user в AuthContext
+    } catch (error) {
+      console.error('SettingsScreen: ошибка при выходе', error);
+      if (Platform.OS === 'web') {
+        window.alert('Не удалось выйти из аккаунта. Попробуйте еще раз.');
+      } else {
+        Alert.alert('Ошибка', 'Не удалось выйти из аккаунта. Попробуйте еще раз.');
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (

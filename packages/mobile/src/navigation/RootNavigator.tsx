@@ -6,7 +6,17 @@ import { AuthStack } from './AuthStack';
 import { AppStack } from './AppStack';
 
 export const RootNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  // Логируем изменения состояния для отладки
+  React.useEffect(() => {
+    console.log('RootNavigator: состояние изменилось', {
+      isAuthenticated,
+      isLoading,
+      hasUser: !!user,
+      userEmail: user?.email,
+    });
+  }, [isAuthenticated, isLoading, user]);
 
   if (isLoading) {
     return (
