@@ -26,31 +26,39 @@ const RegisterScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
+    console.log('handleRegister вызван', { isLoading, email: email ? 'заполнен' : 'пусто' });
+    
     // Предотвращаем множественные клики
     if (isLoading) {
+      console.log('Регистрация уже выполняется, пропускаем');
       return;
     }
 
     if (!email || !password || !confirmPassword) {
+      console.log('Не все поля заполнены');
       Alert.alert('Ошибка', 'Заполните все поля');
       return;
     }
 
     if (password !== confirmPassword) {
+      console.log('Пароли не совпадают');
       Alert.alert('Ошибка', 'Пароли не совпадают');
       return;
     }
 
     if (password.length < 6) {
+      console.log('Пароль слишком короткий');
       Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
       return;
     }
 
+    console.log('Начинаем регистрацию...', { email, passwordLength: password.length });
     setIsLoading(true);
+    
     try {
-      console.log('Начало регистрации...', { email });
+      console.log('Вызываем register из AuthContext...');
       await register(email, password);
-      console.log('Регистрация успешна');
+      console.log('Регистрация успешна, пользователь должен быть перенаправлен');
       // Навигация произойдет автоматически через RootNavigator
     } catch (error) {
       console.error('Ошибка регистрации:', error);
@@ -59,6 +67,7 @@ const RegisterScreen = () => {
         axiosError.response?.data?.error || 
         axiosError.message || 
         'Не удалось зарегистрироваться';
+      console.error('Показываем ошибку пользователю:', errorMessage);
       Alert.alert('Ошибка', errorMessage);
     } finally {
       setIsLoading(false);
@@ -106,13 +115,7 @@ const RegisterScreen = () => {
 
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={(e) => {
-          // Предотвращаем стандартное поведение для web
-          if (Platform.OS === 'web' && e) {
-            (e as any).preventDefault?.();
-          }
-          handleRegister();
-        }}
+        onPress={handleRegister}
         disabled={isLoading}
         activeOpacity={0.7}
       >

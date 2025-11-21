@@ -26,7 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(userData as User);
         }
       } catch (error) {
-        console.error('Ошибка загрузки пользователя:', error);
+        // Тихо игнорируем ошибки загрузки - пользователь просто не будет авторизован
+        // Это нормально при первом запуске приложения
       } finally {
         setIsLoading(false);
       }
