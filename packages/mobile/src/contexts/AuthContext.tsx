@@ -21,13 +21,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Безопасная проверка наличия authStorage
+        if (!authStorage || typeof authStorage.getUser !== 'function') {
+          console.warn('AuthContext: authStorage.getUser недоступен');
+          setIsLoading(false);
+          return;
+        }
+
         const userData = await authStorage.getUser();
-        if (userData) {
-          setUser(userData as User);
+        console.log('AuthContext: загружен пользователь из хранилища', { 
+          hasUserData: !!userData,
+          userDataType: typeof userData 
+        });
+        
+        if (userData && typeof userData === 'object') {
+          // Проверяем, что userData имеет правильную структуру
+          if ('id' in userData && 'email' in userData) {
+            setUser(userData as User);
+          } else {
+            console.warn('AuthContext: userData имеет неверную структуру', userData);
+          }
         }
       } catch (error) {
         // Тихо игнорируем ошибки загрузки - пользователь просто не будет авторизован
         // Это нормально при первом запуске приложения
+        console.warn('AuthContext: ошибка загрузки пользователя', error);
       } finally {
         setIsLoading(false);
       }

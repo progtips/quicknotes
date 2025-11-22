@@ -27,7 +27,13 @@ const NotesListScreen = () => {
     queryFn: () => getNotes(includeArchived),
   });
 
-  const notes = data?.data?.notes || [];
+  // Безопасное извлечение заметок с проверкой структуры
+  const notes = React.useMemo(() => {
+    if (!data) return [];
+    if (!data.data) return [];
+    if (!Array.isArray(data.data.notes)) return [];
+    return data.data.notes;
+  }, [data]);
 
   const handleCreateNote = () => {
     navigation.navigate('NoteEdit', {});
