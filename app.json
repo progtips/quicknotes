@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0f2712fc-e5f2-4fa5-9a18-356174946835"
+      }
+    },
+    "owner": "progtips",
+    "android": {
+      "package": "com.progtips.quicknotesmonorepo"
+    }
+  }
+}

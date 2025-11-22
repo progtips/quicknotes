@@ -32,7 +32,15 @@
       "ssr": false
     },
     "scheme": "quicknotes",
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "API_BASE_URL": "http://localhost:4000/api",
+      "isDev": true,
+      "isProd": false,
+      "env": "development",
+      "eas": {
+        "projectId": "0160ce07-3a6a-4d35-aa34-b101971edb4d"
+      }
+    }
   }
 }
-
