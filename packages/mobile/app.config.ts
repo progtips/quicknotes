@@ -9,11 +9,11 @@ export default ({ config }: { config: any }) => {
 
   // URL API в зависимости от окружения
   // EXPO_PUBLIC_API_URL имеет приоритет и доступен через process.env.EXPO_PUBLIC_API_URL
-  // В Vercel эта переменная должна быть установлена в настройках проекта
+  // В Vercel/Railway эта переменная должна быть установлена в настройках проекта
   const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_API_BASE_URL ||
-    (isDev ? 'http://localhost:4000/api' : 'https://quicknotes-backend.vercel.app/api');
+    (isDev ? 'http://localhost:4000/api' : 'https://quicknotesbackend-production-e224.up.railway.app/api');
 
   return {
     ...config,

@@ -1,11 +1,12 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from '../storage/tokenStorage';
 import { Platform } from 'react-native';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config/api';
 
 /**
  * Создание экземпляра axios с базовой конфигурацией
- * API_BASE_URL из config уже учитывает process.env.EXPO_PUBLIC_API_URL
+ * API_BASE_URL из config/api.ts использует process.env.EXPO_PUBLIC_API_URL
+ * или Railway production URL как fallback
  */
 export const api = axios.create({
   baseURL: API_BASE_URL,

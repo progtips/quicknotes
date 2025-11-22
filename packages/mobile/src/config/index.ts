@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { API_BASE_URL as API_BASE_URL_FROM_CONFIG } from './api';
 
 /**
  * Интерфейс для переменных окружения
@@ -32,9 +33,8 @@ const getApiUrl = (): string => {
     return extra.API_BASE_URL;
   }
 
-  // Fallback: определяем по окружению
-  const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
-  return isDev ? 'http://localhost:4000/api' : 'https://quicknotes-backend.vercel.app/api';
+  // Приоритет 4: Используем централизованный конфиг из api.ts
+  return API_BASE_URL_FROM_CONFIG;
 };
 
 /**
@@ -70,8 +70,12 @@ const config = getConfig();
 /**
  * Базовый URL API
  * Использует process.env.EXPO_PUBLIC_API_URL с fallback на конфигурацию
+ * Для прямого доступа используйте импорт из '../config/api'
  */
 export const API_BASE_URL = config.API_BASE_URL;
+
+// Реэкспорт из централизованного конфига для удобства
+export { API_BASE_URL as API_URL } from './api';
 
 /**
  * API URL из переменной окружения (для прямого доступа)
