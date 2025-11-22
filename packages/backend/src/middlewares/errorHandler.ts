@@ -7,12 +7,31 @@ export interface AppError extends Error {
   code?: string;
 }
 
+// Список разрешенных origins для CORS
+const allowedOrigins = [
+  'https://quicknotes-frontend.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:19006',
+];
+
+// Функция для добавления CORS заголовков
+const setCorsHeaders = (req: Request, res: Response): void => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+};
+
 export const errorHandler = (
   err: AppError | ZodError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
+  // Добавляем CORS заголовки даже при ошибках
+  setCorsHeaders(req, res);
+
   // Ошибка валидации Zod
   if (err instanceof ZodError) {
     const response: ApiResponse = {

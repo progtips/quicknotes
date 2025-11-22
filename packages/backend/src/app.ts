@@ -16,24 +16,37 @@ export const createApp = (): Express => {
     'http://localhost:19006',
   ];
 
-  app.use(
-    cors({
-      origin(origin, callback) {
-        // Разрешаем запросы без origin (например, мобильные приложения, Postman)
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-  );
+  // CORS middleware с явной обработкой preflight
+  const corsOptions = {
+    origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Разрешаем запросы без origin (например, мобильные приложения, Postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // 24 часа для preflight cache
+  };
+
+  app.use(cors(corsOptions));
 
   // Явная обработка preflight запросов для всех маршрутов
-  app.options('*', cors());
+  app.options('*', (req, res) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Max-Age', '86400');
+    }
+    res.sendStatus(204);
+  });
 
   // Middleware
   app.use(express.json());
@@ -84,8 +97,13 @@ export const createApp = (): Express => {
   app.use('/api/auth', authRoutes);
   app.use('/api/notes', notesRoutes);
 
-  // 404 handler
-  app.use((_req, res) => {
+  // 404 handler с CORS заголовками
+  app.use((req, res) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
     sendError(res, 'Маршрут не найден', 404);
   });
 
