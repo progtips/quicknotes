@@ -9,8 +9,33 @@ import { sendSuccess, sendError } from './utils/response';
 export const createApp = (): Express => {
   const app = express();
 
+  // CORS Configuration - должно быть ПЕРВЫМ middleware
+  const allowedOrigins = [
+    'https://quicknotes-frontend.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:19006',
+  ];
+
+  app.use(
+    cors({
+      origin(origin, callback) {
+        // Разрешаем запросы без origin (например, мобильные приложения, Postman)
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  );
+
+  // Явная обработка preflight запросов для всех маршрутов
+  app.options('*', cors());
+
   // Middleware
-  app.use(cors(config.cors));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
