@@ -3,13 +3,25 @@ import { tokenStorage } from '../storage/tokenStorage';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../config/api';
 
+// Валидация API_BASE_URL перед созданием axios instance
+const validatedBaseURL = (() => {
+  if (!API_BASE_URL || typeof API_BASE_URL !== 'string' || API_BASE_URL.length === 0) {
+    console.error('API: API_BASE_URL невалиден', API_BASE_URL);
+    // Fallback на Railway URL
+    const fallbackURL = 'https://quicknotesbackend-production-e224.up.railway.app/api';
+    console.warn('API: используем fallback URL', fallbackURL);
+    return fallbackURL;
+  }
+  return API_BASE_URL;
+})();
+
 /**
  * Создание экземпляра axios с базовой конфигурацией
  * API_BASE_URL из config/api.ts использует process.env.EXPO_PUBLIC_API_URL
  * или Railway production URL как fallback
  */
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: validatedBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
