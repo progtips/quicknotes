@@ -360,6 +360,144 @@ describe('NotesController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockPrisma.note.update).not.toHaveBeenCalled();
     });
+
+    it('не должен удалять заметки других пользователей', async () => {
+      const user1 = createMockUser({ id: 'user-1' });
+      createMockUser({ id: 'user-2' });
+
+      mockRequest = createMockAuthRequest(user1);
+      mockRequest.params = { id: 'note-123' };
+
+      mockPrisma.note.findFirst.mockResolvedValue(null);
+
+      await deleteNote(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockPrisma.note.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'note-123',
+          userId: 'user-1',
+          deletedAt: null,
+        },
+      });
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockPrisma.note.update).not.toHaveBeenCalled();
+    });
+
+    it('должен возвращать 401 если пользователь не авторизован', async () => {
+      mockRequest = {
+        params: { id: 'note-123' },
+        headers: {},
+        body: {},
+        query: {},
+      } as unknown as Request;
+
+      await deleteNote(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+      expect(mockPrisma.note.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Фильтрация по userId', () => {
+    it('должен возвращать только заметки текущего пользователя при getNotes', async () => {
+      const user1 = createMockUser({ id: 'user-1', email: 'user1@test.com' });
+
+      const user1Notes = [
+        createMockNote({ id: 'note-1', userId: user1.id, title: 'User1 Note 1' }),
+        createMockNote({ id: 'note-2', userId: user1.id, title: 'User1 Note 2' }),
+      ];
+
+      // Тест для user1
+      mockRequest = createMockAuthRequest(user1);
+      mockRequest.query = {};
+      mockPrisma.note.findMany.mockResolvedValue(user1Notes);
+
+      await getNotes(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockPrisma.note.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: user1.id,
+          }),
+        })
+      );
+
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        data: { notes: user1Notes },
+      });
+
+      // Проверяем, что заметки user2 не включены
+      const callArgs = mockPrisma.note.findMany.mock.calls[0][0];
+      expect(callArgs.where.userId).toBe(user1.id);
+    });
+
+    it('должен фильтровать удаленные заметки (deletedAt !== null)', async () => {
+      const user = createMockUser();
+      const activeNote = createMockNote({ id: 'note-1', userId: user.id, deletedAt: null });
+
+      mockRequest = createMockAuthRequest(user);
+      mockRequest.query = {};
+      mockPrisma.note.findMany.mockResolvedValue([activeNote]);
+
+      await getNotes(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockPrisma.note.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            deletedAt: null,
+          }),
+        })
+      );
+
+      // Убеждаемся, что удаленная заметка не возвращена
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        data: { notes: [activeNote] },
+      });
+    });
+  });
+
+  describe('Валидация данных', () => {
+    it('должен валидировать минимальную длину заголовка при создании', async () => {
+      const user = createMockUser();
+      mockRequest = createMockAuthRequest(user);
+      mockRequest.body = { title: '', content: 'Some content' };
+
+      await createNote(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockPrisma.note.create).not.toHaveBeenCalled();
+    });
+
+    it('должен валидировать минимальную длину заголовка при обновлении', async () => {
+      const user = createMockUser();
+      const existingNote = createMockNote({ id: 'note-123', userId: user.id });
+
+      mockRequest = createMockAuthRequest(user);
+      mockRequest.params = { id: 'note-123' };
+      mockRequest.body = { title: '' };
+
+      mockPrisma.note.findFirst.mockResolvedValue(existingNote);
+
+      await updateNote(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockPrisma.note.update).not.toHaveBeenCalled();
+    });
+
+    it('должен обрабатывать ошибки базы данных', async () => {
+      const user = createMockUser();
+      mockRequest = createMockAuthRequest(user);
+      mockRequest.body = { title: 'Test Note', content: 'Content' };
+
+      const dbError = new Error('Database connection failed');
+      mockPrisma.note.create.mockRejectedValue(dbError);
+
+      await createNote(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(dbError);
+      expect(mockResponse.status).not.toHaveBeenCalled();
+    });
   });
 });
 
