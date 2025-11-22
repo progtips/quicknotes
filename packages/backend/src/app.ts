@@ -11,7 +11,7 @@ export const createApp = (): Express => {
 
   // CORS Configuration - должно быть ПЕРВЫМ middleware
   const allowedOrigins = [
-    'https://quicknotes-frontend.vercel.app',
+    'https://quicknotes-rust-gamma.vercel.app',
     'http://localhost:3000',
     'http://localhost:19006',
   ];
