@@ -34,7 +34,7 @@ const getApiUrl = (): string => {
 
   // Fallback: определяем по окружению
   const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
-  return isDev ? 'http://localhost:4000/api' : 'https://your-domain.com/api';
+  return isDev ? 'http://localhost:4000/api' : 'https://quicknotes-backend.vercel.app/api';
 };
 
 /**

@@ -13,7 +13,7 @@ export default ({ config }: { config: any }) => {
   const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_API_BASE_URL ||
-    (isDev ? 'http://localhost:4000/api' : 'https://your-domain.com/api');
+    (isDev ? 'http://localhost:4000/api' : 'https://quicknotes-backend.vercel.app/api');
 
   return {
     ...config,
