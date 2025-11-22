@@ -10,7 +10,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "dev": "expo start --dev-client",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
     "build:android": "eas build --platform android --profile production",
     "build:android:preview": "eas build --platform android --profile preview",
     "build:ios": "eas build --platform ios --profile production",
