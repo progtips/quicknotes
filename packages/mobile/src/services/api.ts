@@ -41,6 +41,16 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
   (response) => {
+    // Логируем структуру ответа для отладки
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Response:', {
+        status: response.status,
+        url: response.config.url,
+        baseURL: response.config.baseURL,
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+      });
+    }
     // Успешный ответ - просто возвращаем
     return response;
   },

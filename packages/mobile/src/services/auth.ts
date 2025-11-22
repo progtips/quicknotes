@@ -49,9 +49,22 @@ export const register = async (
     
     console.log('API register: получен ответ', {
       status: response.status,
-      hasToken: !!response.data.data.accessToken,
-      hasUser: !!response.data.data.user,
+      responseData: response.data,
+      hasData: !!response.data,
+      hasNestedData: !!response.data?.data,
+      hasToken: !!response.data?.data?.accessToken,
+      hasUser: !!response.data?.data?.user,
     });
+    
+    // Проверяем структуру ответа
+    if (!response.data) {
+      throw new Error('Ответ сервера не содержит данных');
+    }
+    
+    if (!response.data.data) {
+      console.error('API register: неожиданная структура ответа', response.data);
+      throw new Error('Неожиданная структура ответа сервера');
+    }
     
     // Сохраняем токен и пользователя после успешной регистрации
     if (response.data.data.accessToken) {
@@ -103,6 +116,19 @@ export const login = async (
   data: LoginRequest
 ): Promise<ApiResponse<AuthResponse>> => {
   const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
+  
+  console.log('API login: получен ответ', {
+    status: response.status,
+    responseData: response.data,
+    hasData: !!response.data,
+    hasNestedData: !!response.data?.data,
+  });
+  
+  // Проверяем структуру ответа
+  if (!response.data || !response.data.data) {
+    console.error('API login: неожиданная структура ответа', response.data);
+    throw new Error('Неожиданная структура ответа сервера');
+  }
   
   // Сохраняем токен и пользователя после успешного входа
   if (response.data.data.accessToken) {

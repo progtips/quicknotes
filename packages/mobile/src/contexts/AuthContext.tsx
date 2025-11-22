@@ -39,8 +39,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<void> => {
     try {
       const response = await loginApi({ email, password });
-      // Токен уже сохранен в loginApi функции
-      setUser(response.data.user);
+      console.log('AuthContext.login: получен ответ', { 
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        hasUser: !!response?.data?.user 
+      });
+      
+      // Проверяем наличие данных перед установкой
+      if (response?.data?.user) {
+        setUser(response.data.user);
+      } else {
+        throw new Error('Ответ сервера не содержит данных пользователя');
+      }
     } catch (error) {
       throw error;
     }
@@ -51,10 +61,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('AuthContext.register: вызываем registerApi');
       const response = await registerApi({ email, password });
-      console.log('AuthContext.register: получен ответ', { hasUser: !!response.data.user });
-      // Токен уже сохранен в registerApi функции
-      setUser(response.data.user);
-      console.log('AuthContext.register: пользователь установлен в state');
+      console.log('AuthContext.register: получен ответ', { 
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        hasUser: !!response?.data?.user,
+        responseStructure: response 
+      });
+      
+      // Проверяем наличие данных перед установкой
+      if (response?.data?.user) {
+        // Токен уже сохранен в registerApi функции
+        setUser(response.data.user);
+        console.log('AuthContext.register: пользователь установлен в state');
+      } else {
+        console.error('AuthContext.register: ответ не содержит user', response);
+        throw new Error('Ответ сервера не содержит данных пользователя');
+      }
     } catch (error) {
       console.error('AuthContext.register: ошибка', error);
       throw error;
