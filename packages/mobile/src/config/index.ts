@@ -1,16 +1,23 @@
-import { Platform } from 'react-native';
 import { API_BASE_URL as API_BASE_URL_FROM_CONFIG } from './api';
 
+// Определяем, работаем ли мы на web платформе
+// На web полностью избегаем использования expo-constants
+const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+
 // Условный импорт Constants только для мобильных платформ
-// На web Constants может быть недоступен или вызывать ошибки
-let Constants: any;
-try {
-  if (Platform.OS !== 'web') {
-    Constants = require('expo-constants').default;
+// На web Constants может быть недоступен или вызывать ошибки при сборке
+let Constants: any = null;
+if (!isWeb) {
+  try {
+    // Используем динамический импорт только для мобильных платформ
+    const expoConstants = require('expo-constants');
+    Constants = expoConstants.default || expoConstants;
+  } catch (error) {
+    // Тихо игнорируем ошибки - на web это нормально
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Config: не удалось загрузить expo-constants', error);
+    }
   }
-} catch (error) {
-  console.warn('Config: не удалось загрузить expo-constants', error);
-  Constants = null;
 }
 
 /**
@@ -39,7 +46,7 @@ const getApiUrl = (): string => {
 
   // Приоритет 2: Constants.expoConfig.extra.EXPO_PUBLIC_API_URL (только для mobile builds)
   // На web полностью избегаем использования Constants, чтобы предотвратить ошибки
-  if (Platform.OS !== 'web') {
+  if (!isWeb && Constants) {
     try {
       // Строгая проверка Constants перед использованием
       if (typeof Constants === 'undefined' || Constants === null) {
@@ -82,7 +89,7 @@ const getConfig = (): EnvConfig => {
   let extra: EnvConfig | undefined;
   
   // На web полностью избегаем использования Constants
-  if (Platform.OS !== 'web') {
+  if (!isWeb && Constants) {
     try {
       // Строгая проверка Constants перед использованием
       if (typeof Constants !== 'undefined' && Constants !== null && Constants.expoConfig) {
