@@ -7,7 +7,9 @@ export default ({ config }: { config: any }) => {
   const isDev = env === 'development';
 
   // URL API в зависимости от окружения
+  // EXPO_PUBLIC_API_URL имеет приоритет и доступен через process.env.EXPO_PUBLIC_API_URL
   const API_BASE_URL =
+    process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_API_BASE_URL ||
     (isDev ? 'http://localhost:4000/api' : 'https://your-domain.com/api');
 
@@ -52,6 +54,7 @@ export default ({ config }: { config: any }) => {
     // Переменные окружения доступные в runtime через Constants.expoConfig.extra
     extra: {
       API_BASE_URL,
+      EXPO_PUBLIC_API_URL: API_BASE_URL,
       isDev,
       isProd: !isDev,
       env,

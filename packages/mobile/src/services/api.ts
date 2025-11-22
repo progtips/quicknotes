@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../config';
 
 /**
  * Создание экземпляра axios с базовой конфигурацией
+ * API_BASE_URL из config уже учитывает process.env.EXPO_PUBLIC_API_URL
  */
 export const api = axios.create({
   baseURL: API_BASE_URL,

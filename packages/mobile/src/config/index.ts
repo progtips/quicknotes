@@ -5,40 +5,79 @@ import Constants from 'expo-constants';
  */
 interface EnvConfig {
   API_BASE_URL: string;
+  EXPO_PUBLIC_API_URL?: string;
   isDev: boolean;
   isProd: boolean;
   env: string;
 }
 
 /**
+ * Получение API URL с приоритетом process.env.EXPO_PUBLIC_API_URL
+ * Это работает для всех платформ (mobile, web, production builds)
+ */
+const getApiUrl = (): string => {
+  // Приоритет 1: process.env.EXPO_PUBLIC_API_URL (работает в web и production builds)
+  if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  // Приоритет 2: Constants.expoConfig.extra.EXPO_PUBLIC_API_URL (для mobile builds)
+  const extra = Constants.expoConfig?.extra as EnvConfig | undefined;
+  if (extra?.EXPO_PUBLIC_API_URL) {
+    return extra.EXPO_PUBLIC_API_URL;
+  }
+
+  // Приоритет 3: Constants.expoConfig.extra.API_BASE_URL (backward compatibility)
+  if (extra?.API_BASE_URL) {
+    return extra.API_BASE_URL;
+  }
+
+  // Fallback: определяем по окружению
+  const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
+  return isDev ? 'http://localhost:4000/api' : 'https://your-domain.com/api';
+};
+
+/**
  * Получение конфигурации из Expo Constants
  */
 const getConfig = (): EnvConfig => {
   const extra = Constants.expoConfig?.extra as EnvConfig | undefined;
+  const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
+  
+  // Получаем API URL с учетом всех источников
+  const apiUrl = getApiUrl();
 
   if (!extra) {
     // Fallback значения для случаев, когда extra недоступен
-    // Используем безопасную проверку для web платформы
-    // __DEV__ доступен в Expo на всех платформах, включая web
-    // process.env может быть недоступен на web, поэтому используем только __DEV__
-    const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
     return {
-      API_BASE_URL: isDev ? 'http://localhost:4000/api' : 'https://your-domain.com/api',
+      API_BASE_URL: apiUrl,
       isDev,
       isProd: !isDev,
       env: isDev ? 'development' : 'production',
     };
   }
 
-  return extra;
+  // Возвращаем конфигурацию с обновленным API URL
+  return {
+    ...extra,
+    API_BASE_URL: apiUrl,
+    EXPO_PUBLIC_API_URL: apiUrl,
+  };
 };
 
 const config = getConfig();
 
 /**
  * Базовый URL API
+ * Использует process.env.EXPO_PUBLIC_API_URL с fallback на конфигурацию
  */
 export const API_BASE_URL = config.API_BASE_URL;
+
+/**
+ * API URL из переменной окружения (для прямого доступа)
+ * Работает в mobile, web и production builds
+ */
+export const EXPO_PUBLIC_API_URL = config.EXPO_PUBLIC_API_URL || config.API_BASE_URL;
 
 /**
  * Флаг разработки
@@ -60,6 +99,7 @@ export const env = config.env;
  */
 export default {
   API_BASE_URL,
+  EXPO_PUBLIC_API_URL,
   isDev,
   isProd,
   env,
