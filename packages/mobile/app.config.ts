@@ -3,11 +3,13 @@
  */
 export default ({ config }: { config: any }) => {
   // Определение окружения (development по умолчанию)
+  // В Vercel NODE_ENV автоматически устанавливается в 'production'
   const env = process.env.NODE_ENV || 'development';
   const isDev = env === 'development';
 
   // URL API в зависимости от окружения
   // EXPO_PUBLIC_API_URL имеет приоритет и доступен через process.env.EXPO_PUBLIC_API_URL
+  // В Vercel эта переменная должна быть установлена в настройках проекта
   const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_API_BASE_URL ||
