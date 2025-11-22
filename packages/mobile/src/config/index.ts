@@ -4,14 +4,26 @@ import { API_BASE_URL as API_BASE_URL_FROM_CONFIG } from './api';
 // На web полностью избегаем использования expo-constants
 const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
 
-// Условный импорт Constants только для мобильных платформ
-// На web Constants может быть недоступен или вызывать ошибки при сборке
-let Constants: any = null;
+// Безопасное получение Constants только для мобильных платформ
+// ВАЖНО: На web НЕ используем expo-constants вообще, чтобы Metro bundler не включал его в bundle
+let ConstantsExtra: any = null;
+
+// Пытаемся получить Constants только если НЕ web платформа
+// Используем строковую конкатенацию для require, чтобы Metro bundler не анализировал это статически
 if (!isWeb) {
   try {
-    // Используем динамический импорт только для мобильных платформ
-    const expoConstants = require('expo-constants');
-    Constants = expoConstants.default || expoConstants;
+    // Используем строковую конкатенацию для обхода статического анализа Metro bundler'а
+    // 'expo-' + 'constants' предотвращает статический анализ require()
+    const expoModuleName = 'expo-' + 'constants';
+    // Проверяем наличие require перед использованием
+    if (typeof require !== 'undefined') {
+      const expoConstantsModule = require(expoModuleName);
+      const Constants = expoConstantsModule?.default || expoConstantsModule;
+      // Кешируем extra для быстрого доступа
+      if (Constants?.expoConfig?.extra) {
+        ConstantsExtra = Constants.expoConfig.extra;
+      }
+    }
   } catch (error) {
     // Тихо игнорируем ошибки - на web это нормально
     if (process.env.NODE_ENV === 'development') {
@@ -46,19 +58,10 @@ const getApiUrl = (): string => {
 
   // Приоритет 2: Constants.expoConfig.extra.EXPO_PUBLIC_API_URL (только для mobile builds)
   // На web полностью избегаем использования Constants, чтобы предотвратить ошибки
-  if (!isWeb && Constants) {
+  if (!isWeb && ConstantsExtra) {
     try {
-      // Строгая проверка Constants перед использованием
-      if (typeof Constants === 'undefined' || Constants === null) {
-        throw new Error('Constants is undefined');
-      }
-      
-      // Проверка expoConfig
-      if (!Constants.expoConfig || typeof Constants.expoConfig !== 'object') {
-        throw new Error('Constants.expoConfig is not available');
-      }
-      
-      const extra = Constants.expoConfig.extra as EnvConfig | undefined;
+      // Используем кешированный extra для безопасности
+      const extra = ConstantsExtra as EnvConfig | undefined;
       if (extra?.EXPO_PUBLIC_API_URL && typeof extra.EXPO_PUBLIC_API_URL === 'string') {
         return extra.EXPO_PUBLIC_API_URL;
       }
@@ -68,7 +71,7 @@ const getApiUrl = (): string => {
         return extra.API_BASE_URL;
       }
     } catch (error) {
-      console.warn('Config: ошибка чтения Constants.expoConfig', error);
+      console.warn('Config: ошибка чтения Constants.expoConfig.extra', error);
     }
   }
 
@@ -89,12 +92,10 @@ const getConfig = (): EnvConfig => {
   let extra: EnvConfig | undefined;
   
   // На web полностью избегаем использования Constants
-  if (!isWeb && Constants) {
+  if (!isWeb && ConstantsExtra) {
     try {
-      // Строгая проверка Constants перед использованием
-      if (typeof Constants !== 'undefined' && Constants !== null && Constants.expoConfig) {
-        extra = Constants.expoConfig.extra as EnvConfig | undefined;
-      }
+      // Используем кешированный extra для безопасности
+      extra = ConstantsExtra as EnvConfig | undefined;
     } catch (error) {
       console.warn('Config: не удалось получить Constants.expoConfig.extra', error);
     }
