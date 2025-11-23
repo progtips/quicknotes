@@ -22,20 +22,53 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('Инициализация...');
+
+  React.useEffect(() => {
+    console.log('✅ LoginScreen: компонент загружен');
+    setDebugInfo('LoginScreen загружен');
+    
+    try {
+      if (!navigation) {
+        setDebugInfo('❌ Ошибка: navigation недоступен');
+        return;
+      }
+      if (!login) {
+        setDebugInfo('❌ Ошибка: login функция недоступна');
+        return;
+      }
+      setDebugInfo('✅ LoginScreen готов к работе');
+    } catch (error) {
+      setDebugInfo(`❌ Ошибка инициализации: ${error}`);
+    }
+  }, [navigation, login]);
 
   const handleLogin = async () => {
+    console.log('LoginScreen.handleLogin: начало', { email, hasPassword: !!password });
+    
     if (!email || !password) {
+      console.warn('LoginScreen.handleLogin: не заполнены поля');
       Alert.alert('Ошибка', 'Заполните все поля');
       return;
     }
 
     setIsLoading(true);
+    setDebugInfo('Отправка запроса...');
+    
     try {
+      console.log('LoginScreen.handleLogin: вызываем login функцию');
       await login(email, password);
+      console.log('LoginScreen.handleLogin: login успешно завершен');
+      setDebugInfo('✅ Вход выполнен успешно');
       // Навигация произойдет автоматически через RootNavigator
     } catch (error) {
+      console.error('LoginScreen.handleLogin: ошибка', error);
       const axiosError = error as AxiosError<{ error: string }>;
-      Alert.alert('Ошибка', axiosError.response?.data?.error || 'Не удалось войти');
+      const errorMessage = axiosError.response?.data?.error || 
+                          axiosError.message || 
+                          'Не удалось войти';
+      setDebugInfo(`❌ Ошибка: ${errorMessage}`);
+      Alert.alert('Ошибка', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +80,11 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      {__DEV__ && (
+        <View style={styles.debugBanner}>
+          <Text style={styles.debugText}>{debugInfo}</Text>
+        </View>
+      )}
       <Text style={styles.title}>Вход</Text>
 
       <TextInput
@@ -76,7 +114,10 @@ const LoginScreen = () => {
         disabled={isLoading}
       >
         {isLoading ? (
-          <ActivityIndicator color="#fff" />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#fff" />
+            <Text style={styles.loadingText}>Вход...</Text>
+          </View>
         ) : (
           <Text style={styles.buttonText}>Войти</Text>
         )}
@@ -136,6 +177,28 @@ const styles = StyleSheet.create({
   switchText: {
     color: '#007AFF',
     fontSize: 14,
+  },
+  debugBanner: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    padding: 8,
+    marginBottom: 10,
+    borderRadius: 4,
+  },
+  debugText: {
+    fontSize: 10,
+    color: '#007AFF',
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

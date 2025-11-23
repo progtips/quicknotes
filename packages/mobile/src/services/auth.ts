@@ -115,35 +115,57 @@ export const register = async (
 export const login = async (
   data: LoginRequest
 ): Promise<ApiResponse<AuthResponse>> => {
-  const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
-  
-  console.log('API login: получен ответ', {
-    status: response.status,
-    responseData: response.data,
-    hasData: !!response.data,
-    hasNestedData: !!response.data?.data,
+  console.log('API login: отправляем запрос', {
+    url: `${api.defaults.baseURL}/auth/login`,
+    email: data.email,
+    hasPassword: !!data.password,
   });
   
-  // Проверяем структуру ответа
-  if (!response.data || !response.data.data) {
-    console.error('API login: неожиданная структура ответа', response.data);
-    throw new Error('Неожиданная структура ответа сервера');
-  }
+  try {
+    const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
+    
+    console.log('API login: получен ответ', {
+      status: response.status,
+      responseData: response.data,
+      hasData: !!response.data,
+      hasNestedData: !!response.data?.data,
+      hasToken: !!response.data?.data?.accessToken,
+      hasUser: !!response.data?.data?.user,
+    });
   
-  // Сохраняем токен и пользователя после успешного входа
-  if (response.data.data.accessToken) {
-    try {
-      await tokenStorage.setToken(response.data.data.accessToken);
-      if (authStorage && typeof authStorage.setUser === 'function') {
-        await authStorage.setUser(response.data.data.user);
-      }
-    } catch (error) {
-      console.error('API login: ошибка сохранения токена', error);
-      throw error; // Пробрасываем ошибку, так как без токена вход не имеет смысла
+    // Проверяем структуру ответа
+    if (!response.data || !response.data.data) {
+      console.error('API login: неожиданная структура ответа', response.data);
+      throw new Error('Неожиданная структура ответа сервера');
     }
+    
+    // Сохраняем токен и пользователя после успешного входа
+    if (response.data.data.accessToken) {
+      try {
+        await tokenStorage.setToken(response.data.data.accessToken);
+        if (authStorage && typeof authStorage.setUser === 'function') {
+          await authStorage.setUser(response.data.data.user);
+        }
+        console.log('API login: токен и пользователь сохранены');
+      } catch (error) {
+        console.error('API login: ошибка сохранения токена', error);
+        throw error; // Пробрасываем ошибку, так как без токена вход не имеет смысла
+      }
+    }
+    
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ error?: string; message?: string }>;
+    console.error('API login: ошибка запроса', {
+      message: axiosError.message,
+      status: axiosError.response?.status,
+      statusText: axiosError.response?.statusText,
+      data: axiosError.response?.data,
+      url: axiosError.config?.url,
+      baseURL: axiosError.config?.baseURL,
+    });
+    throw error;
   }
-  
-  return response.data;
 };
 
 /**
