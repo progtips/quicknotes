@@ -76,10 +76,10 @@ api.interceptors.response.use(
         console.error('Ошибка очистки токена:', clearError);
       }
       
-      // На web платформе можно перенаправить на страницу входа
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
+      // На web платформе не делаем редирект через window.location
+      // Навигация будет обработана через React Navigation
+      // Это предотвращает 404 ошибки на Vercel
+      console.warn('API: 401 ошибка - токен недействителен, навигация обработается через React Navigation');
     }
 
     // Пробрасываем ошибку дальше

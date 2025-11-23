@@ -1,6 +1,6 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { ActivityIndicator, View, StyleSheet, Text } from 'react-native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import { ActivityIndicator, View, StyleSheet, Text, Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthStack } from './AuthStack';
 import { AppStack } from './AppStack';
@@ -61,9 +61,34 @@ export const RootNavigator = () => {
     );
   }
 
+  // Конфигурация linking для веб-платформы
+  const linking: LinkingOptions<any> | undefined = Platform.select({
+    web: {
+      enabled: true,
+      prefixes: ['/'],
+      config: {
+        screens: {
+          // AuthStack
+          Login: '/login',
+          Register: '/register',
+          // AppStack
+          MainTabs: {
+            screens: {
+              Notes: '/',
+              Settings: '/settings',
+            },
+          },
+          NoteEdit: '/notes/:noteId?',
+        },
+      },
+    },
+    default: undefined,
+  });
+
   try {
     return (
       <NavigationContainer
+        linking={linking}
         onReady={() => {
           console.log('✅ NavigationContainer готов');
         }}
